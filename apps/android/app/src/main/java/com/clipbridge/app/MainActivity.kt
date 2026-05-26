@@ -76,14 +76,14 @@ class MainActivity : Activity() {
 
         hostInput = EditText(this).apply {
             hint = AppText.HOST_HINT
-            singleLine = true
+            setSingleLine(true)
         }
         root.addView(hostInput)
 
         portInput = EditText(this).apply {
             hint = AppText.PORT_HINT
             setText("7890")
-            singleLine = true
+            setSingleLine(true)
         }
         root.addView(portInput)
 
