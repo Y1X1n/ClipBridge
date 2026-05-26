@@ -57,6 +57,18 @@ button:hover {
   box-shadow: 7px 7px 0 rgba(215, 255, 71, 0.2);
 }
 
+.language-switch {
+  position: fixed;
+  top: 22px;
+  right: 22px;
+  z-index: 2;
+  min-width: 48px;
+  padding: 0.55rem 0.75rem;
+  color: var(--paper);
+  background: rgba(16, 19, 15, 0.82);
+  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.28);
+}
+
 .shell {
   width: min(1120px, calc(100vw - 36px));
   margin: 0 auto;
