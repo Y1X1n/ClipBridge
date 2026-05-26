@@ -15,6 +15,9 @@ class WebSocketClient(
     private var socket: WebSocket? = null
 
     fun connect(host: String, port: Int) {
+        onStatus("${AppText.VALIDATING_LINK} $host:$port")
+        socket?.close(1000, "Reconnect")
+
         val request = Request.Builder()
             .url("ws://$host:$port")
             .build()
@@ -26,6 +29,9 @@ class WebSocketClient(
             }
 
             override fun onMessage(webSocket: WebSocket, text: String) {
+                if (text.contains("\"type\":\"pairing.confirm\"")) {
+                    onStatus("${AppText.LINK_VALIDATED} $host:$port")
+                }
                 onMessage(text)
             }
 

@@ -157,7 +157,7 @@ class MainActivity : Activity() {
             hostInput.setText(host)
             portInput.setText(port.toString())
             pairing.saveEndpoint(host, port)
-            setStatus(AppText.PAIRING_READY)
+            setStatus(AppText.VALIDATING_LINK)
             client.connect(host, port)
         } catch (_: Exception) {
             setStatus(AppText.INVALID_QR)

@@ -23,4 +23,6 @@ object AppText {
     const val NODE_STATUS = "节点状态 / Node status"
     const val LINK_PANEL = "链路配置 / Link setup"
     const val MANUAL_HINT = "扫码会自动填入地址，也可以手动输入。 / Scan to fill the address, or enter it manually."
+    const val VALIDATING_LINK = "正在校验信息通路 / Validating link"
+    const val LINK_VALIDATED = "信息通路校验成功 / Link validated"
 }
