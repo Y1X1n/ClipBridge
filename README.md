@@ -1,109 +1,68 @@
 # ClipBridge
 
-## 中文
+ClipBridge 是一个面向 Windows + Android 的本地优先剪贴板桥接工具。它通过局域网直连完成设备配对和文本传输，不依赖云端、账号系统或自备服务器。
 
-ClipBridge 是一个面向 Windows 和 Android 的本地优先剪贴板桥接工具。
+ClipBridge is a local-first clipboard bridge for Windows + Android. It pairs devices and transfers text over the local network without cloud services, accounts, or a self-hosted server.
 
-首版设计目标：
+## 当前能力 / Current capabilities
 
-- Windows 桌面端 + Android 移动端
-- 仅通过局域网 / P2P 通信
-- 不使用云端服务
-- 不需要账号系统
-- 不需要自备服务器
-- 首版优先同步文本和链接
-
-### 仓库结构
-
-```text
-apps/windows   Tauri + React Windows 客户端
-apps/android   Kotlin 原生 Android 客户端
-docs           产品与协议文档
-```
-
-### MVP 流程
-
-1. Windows 在局域网内启动本地 WebSocket 服务。
-2. Windows 展示可扫码配对二维码和手动连接地址。
-3. Android 通过扫码或手动输入 IP/端口连接 Windows。
-4. Android 可以把当前剪贴板文本发送到 Windows。
-5. Windows 记录收到的内容，并可写入系统剪贴板。
-6. Windows 自动监听剪贴板、Android 通知和持久化历史会在后续阶段完善。
-
-### Windows 开发
-
-```bash
-cd apps/windows
-npm install
-npm run tauri dev
-```
-
-依赖：
-
-- Node.js
-- Rust
-- Windows 上的 Tauri 系统依赖
-
-### Windows 打包
-
-```bash
-cd apps/windows
-npm run tauri build
-```
-
-常见产物：
-
-```text
-apps/windows/src-tauri/target/release/clipbridge.exe
-apps/windows/src-tauri/target/release/bundle/
-```
-
-### Android 开发
-
-用 Android Studio 打开 `apps/android`，或在配置好 Android SDK 和 Gradle 后运行：
-
-```bash
-cd apps/android
-./gradlew assembleDebug
-```
-
-### 隐私定位
-
-ClipBridge 不包含云同步、统计分析、账号系统或远程存储。剪贴板内容只应在用户主动配对的本地网络或虚拟私有网络设备之间传输。
+- Windows 桌面端：Tauri 2 + React + TypeScript + Rust。
+- Android 移动端：Kotlin 原生 Android 应用。
+- Windows 在局域网内启动本地 WebSocket 服务，默认端口 `7890`。
+- Windows 端展示可扫描二维码，也展示手动输入用的 IP / 端口。
+- Android 支持扫码配对，也支持手动输入 Windows IP / 端口。
+- Android 扫码后会自动校验信息通路：连接 Windows WebSocket，发送 `device.hello`，收到 `pairing.confirm` 后显示链路校验成功。
+- Android 支持发送当前剪贴板文本到 Windows。
+- Android 支持从系统分享面板接收文本 / 链接并发送到 Windows。
+- Windows 收到 Android 文本后记录到传输历史，并写入 Windows 系统剪贴板。
+- Windows / Android UI 均使用中英双语文案。
+- Android 已允许局域网 `ws://` 明文 WebSocket，用于个人热点或同一 Wi-Fi 下的本地连接。
 
 ---
 
-## English
-
-ClipBridge is a local-first clipboard bridge for Windows and Android.
-
-The first version is designed around:
-
-- Windows desktop app + Android app
-- LAN/P2P communication only
-- No cloud service
-- No account system
-- No self-hosted server requirement
-- Text and link clipboard sync as the initial content type
-
-### Repository layout
+## 仓库结构 / Repository layout
 
 ```text
-apps/windows   Tauri + React Windows client
-apps/android   Native Kotlin Android client
-docs           Product and protocol notes
+.
+├── apps/
+│   ├── windows/                 Tauri + React Windows client
+│   │   ├── src/                 React UI and protocol types
+│   │   └── src-tauri/           Rust backend, clipboard, pairing, WebSocket server
+│   └── android/                 Native Kotlin Android client
+│       └── app/src/main/        Android manifest, UI, QR scanner, WebSocket client
+├── docs/                        Product and protocol notes
+└── .github/workflows/build.yml  GitHub Actions packaging workflow
 ```
 
-### MVP flow
+---
 
-1. Windows starts a local WebSocket endpoint on the LAN.
-2. Windows displays a scannable pairing QR code and manual connection address.
-3. Android connects by QR payload or manual host/port entry.
-4. Android can send current clipboard text to Windows.
-5. Windows records received content and can write it to the system clipboard.
-6. Windows clipboard monitoring, Android notifications, and persistent history are planned for later slices.
+## 使用流程 / Usage flow
 
-### Windows development
+### 中文
+
+1. 启动 Windows 端 `clipbridge.exe`。
+2. 确保 Windows 和 Android 在同一个局域网内，例如同一 Wi-Fi 或手机热点。
+3. Windows 端会显示二维码和局域网地址。
+4. Android 端点击“扫描 Windows 二维码 / Scan Windows QR”。
+5. 扫码后 Android 会自动连接并校验链路。
+6. Android 显示“信息通路校验成功 / Link validated”后，即可发送剪贴板文本。
+7. Windows 收到文本后会写入系统剪贴板，并在传输记录中显示。
+
+### English
+
+1. Start `clipbridge.exe` on Windows.
+2. Make sure Windows and Android are on the same LAN, such as the same Wi-Fi or phone hotspot.
+3. The Windows app displays a QR code and LAN address.
+4. Tap “扫描 Windows 二维码 / Scan Windows QR” on Android.
+5. Android connects and validates the link automatically after scanning.
+6. Once Android shows “信息通路校验成功 / Link validated”, clipboard text can be sent.
+7. Windows writes received text to the system clipboard and records it in the transfer log.
+
+---
+
+## 开发运行 / Development
+
+### Windows
 
 ```bash
 cd apps/windows
@@ -115,31 +74,111 @@ Requirements:
 
 - Node.js
 - Rust
-- Tauri system prerequisites for Windows
+- Tauri Windows system prerequisites
 
-### Windows packaging
+### Android
 
-```bash
-cd apps/windows
-npm run tauri build
-```
-
-Common outputs:
-
-```text
-apps/windows/src-tauri/target/release/clipbridge.exe
-apps/windows/src-tauri/target/release/bundle/
-```
-
-### Android development
-
-Open `apps/android` in Android Studio, or run Gradle from that directory once an Android SDK and Gradle are configured.
+Open `apps/android` in Android Studio, or run Gradle after configuring Android SDK / JDK:
 
 ```bash
 cd apps/android
 ./gradlew assembleDebug
 ```
 
-### Privacy stance
+Android key dependencies:
 
-ClipBridge does not include cloud sync, analytics, accounts, or remote storage. Clipboard content should only move between devices the user has paired on their own local or virtual private network.
+- OkHttp WebSocket client
+- ZXing Android Embedded QR scanner
+- AndroidX Core
+
+---
+
+## 打包 / Packaging
+
+### GitHub Actions
+
+The repository includes `.github/workflows/build.yml`, which builds both apps on every push:
+
+- Windows artifact: `clipbridge-windows-exe`
+- Android artifact: `clipbridge-android-debug-apk`
+
+### Local Windows EXE
+
+```bash
+cd apps/windows
+npm run tauri build
+```
+
+Useful output paths:
+
+```text
+apps/windows/src-tauri/target/release/clipbridge.exe
+apps/windows/src-tauri/target/release/bundle/
+```
+
+### Local Android APK
+
+```bash
+cd apps/android
+./gradlew assembleDebug
+```
+
+Useful output path:
+
+```text
+apps/android/app/build/outputs/apk/debug/app-debug.apk
+```
+
+---
+
+## 局域网连接排查 / LAN troubleshooting
+
+- Windows 和 Android 必须处于同一局域网。
+- 如果使用手机热点，请确认热点没有开启客户端隔离。
+- Windows 防火墙需要允许 ClipBridge 监听局域网端口 `7890`。
+- Android 使用 `ws://` 局域网连接；项目已配置 cleartext LAN traffic。
+- 如果扫码后一直停在校验状态，可以尝试在 Android 端手动输入 Windows 显示的 IP 和端口。
+- 如果 Windows IP 变化，重新打开 Windows 端或刷新二维码后再扫码。
+
+---
+
+## 协议摘要 / Protocol summary
+
+Pairing QR payload:
+
+```json
+{
+  "app": "clipbridge",
+  "version": 1,
+  "host": "192.168.1.20",
+  "port": 7890,
+  "pairingCode": "384921",
+  "deviceName": "Windows PC",
+  "expiresAt": 1710000000000
+}
+```
+
+Clipboard message envelope:
+
+```json
+{
+  "version": 1,
+  "type": "clipboard.update",
+  "messageId": "msg_001",
+  "fromDeviceId": "android_001",
+  "toDeviceId": "windows_001",
+  "contentType": "text",
+  "content": "hello world",
+  "timestamp": 1710000000000
+}
+```
+
+See `docs/protocol.md` for more details.
+
+---
+
+## 隐私定位 / Privacy stance
+
+ClipBridge 不包含云同步、统计分析、账号系统或远程存储。剪贴板内容只在用户主动配对的本地网络设备之间传输。
+
+ClipBridge does not include cloud sync, analytics, accounts, or remote storage. Clipboard content only moves between devices the user has explicitly paired on their local network.
