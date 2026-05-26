@@ -258,6 +258,33 @@ h2 {
   z-index: 1;
 }
 
+.qr-code,
+.qr-loading {
+  width: 184px;
+  height: 184px;
+}
+
+.qr-code {
+  display: block;
+  border: 10px solid var(--paper);
+  background: var(--paper);
+}
+
+.qr-loading {
+  display: grid;
+  place-items: center;
+  color: var(--ink);
+  background: var(--paper);
+  font-family: "Impact", "Arial Black", sans-serif;
+  font-size: 2rem;
+}
+
+.scan-hint {
+  display: block !important;
+  color: var(--paper);
+  line-height: 1.45;
+}
+
 .pairing-details {
   align-self: center;
 }

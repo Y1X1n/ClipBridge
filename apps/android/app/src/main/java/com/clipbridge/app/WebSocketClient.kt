@@ -21,7 +21,7 @@ class WebSocketClient(
 
         socket = client.newWebSocket(request, object : WebSocketListener() {
             override fun onOpen(webSocket: WebSocket, response: Response) {
-                onStatus("Connected to $host:$port")
+                onStatus("${AppText.CONNECTED_TO} $host:$port")
                 webSocket.send(Protocol.hello(deviceId))
             }
 
@@ -30,11 +30,11 @@ class WebSocketClient(
             }
 
             override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
-                onStatus("Disconnected")
+                onStatus(AppText.DISCONNECTED)
             }
 
             override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
-                onStatus(t.message ?: "Connection failed")
+                onStatus(t.message ?: AppText.CONNECTION_FAILED)
             }
         })
     }

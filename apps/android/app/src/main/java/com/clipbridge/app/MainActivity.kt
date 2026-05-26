@@ -34,7 +34,7 @@ class MainActivity : Activity() {
         }
 
         intent.getStringExtra("sharedText")?.takeIf { it.isNotBlank() }?.let { sharedText ->
-            HistoryStore.add(HistoryItem("sent", "Android share", sharedText))
+            HistoryStore.add(HistoryItem("sent", AppText.ANDROID_SHARE, sharedText))
             client.sendClipboard(sharedText)
             renderHistory()
         }
@@ -43,7 +43,7 @@ class MainActivity : Activity() {
     override fun onNewIntent(intent: android.content.Intent) {
         super.onNewIntent(intent)
         intent.getStringExtra("sharedText")?.takeIf { it.isNotBlank() }?.let { sharedText ->
-            HistoryStore.add(HistoryItem("sent", "Android share", sharedText))
+            HistoryStore.add(HistoryItem("sent", AppText.ANDROID_SHARE, sharedText))
             client.sendClipboard(sharedText)
             renderHistory()
         }
@@ -62,33 +62,33 @@ class MainActivity : Activity() {
         })
 
         root.addView(TextView(this).apply {
-            text = "Local Windows ↔ Android clipboard sync"
+            text = AppText.SUBTITLE
             textSize = 16f
             setTextColor(0xFF475569.toInt())
         })
 
         status = TextView(this).apply {
-            text = "Not connected"
+            text = AppText.NOT_CONNECTED
             textSize = 15f
             setPadding(0, 28, 0, 16)
         }
         root.addView(status)
 
         hostInput = EditText(this).apply {
-            hint = "Windows IP, e.g. 192.168.1.20"
+            hint = AppText.HOST_HINT
             singleLine = true
         }
         root.addView(hostInput)
 
         portInput = EditText(this).apply {
-            hint = "Port"
+            hint = AppText.PORT_HINT
             setText("7890")
             singleLine = true
         }
         root.addView(portInput)
 
         root.addView(Button(this).apply {
-            text = "Connect to Windows"
+            text = AppText.CONNECT
             setOnClickListener {
                 val host = hostInput.text.toString().trim()
                 val port = portInput.text.toString().toIntOrNull() ?: 7890
@@ -100,11 +100,11 @@ class MainActivity : Activity() {
         })
 
         root.addView(Button(this).apply {
-            text = "Send current clipboard to Windows"
+            text = AppText.SEND_CLIPBOARD
             setOnClickListener {
                 val content = clipboard.readText()
                 if (content.isNotBlank()) {
-                    HistoryStore.add(HistoryItem("sent", "Android", content))
+                    HistoryStore.add(HistoryItem("sent", AppText.ANDROID_DEVICE, content))
                     client.sendClipboard(content)
                     renderHistory()
                 }
@@ -112,7 +112,7 @@ class MainActivity : Activity() {
         })
 
         root.addView(TextView(this).apply {
-            text = "Recent history"
+            text = AppText.RECENT_HISTORY
             textSize = 22f
             setPadding(0, 36, 0, 12)
         })
@@ -136,7 +136,7 @@ class MainActivity : Activity() {
                     renderHistory()
                 }
             } else {
-                setStatus("Received ${json.optString("type")}")
+                setStatus("${AppText.RECEIVED} ${json.optString("type")}")
             }
         }
     }
@@ -149,7 +149,7 @@ class MainActivity : Activity() {
                 setPadding(0, 16, 0, 16)
             }
             entry.addView(TextView(this).apply {
-                text = "${item.direction} · ${item.sourceDevice}"
+                text = "${if (item.direction == "sent") AppText.SENT else AppText.RECEIVED} · ${item.sourceDevice}"
                 textSize = 13f
                 setTextColor(0xFF64748B.toInt())
             })
@@ -159,7 +159,7 @@ class MainActivity : Activity() {
                 setTextColor(0xFF0F172A.toInt())
             })
             entry.addView(Button(this).apply {
-                text = "Copy"
+                text = AppText.COPY
                 gravity = Gravity.CENTER
                 setOnClickListener { clipboard.writeText(item.content) }
             })

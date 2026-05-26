@@ -1,5 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
-import { useEffect, useState } from 'react';
+import QRCode from 'qrcode';
+import { useEffect, useMemo, useState } from 'react';
 import './styles.css';
 import type { HistoryItem, PairingInfo } from './protocol';
 
@@ -14,7 +15,7 @@ type Copy = {
   nodeStatus: string;
   pairAndroid: string;
   qrLabel: string;
-  qrText: string;
+  qrAlt: string;
   lanAddress: string;
   pairingCode: string;
   expires: string;
@@ -35,6 +36,7 @@ type Copy = {
   inboundFrom: string;
   outboundTo: string;
   languageToggle: string;
+  scanHint: string;
 };
 
 const copy: Record<Language, Copy> = {
@@ -46,8 +48,8 @@ const copy: Record<Language, Copy> = {
     statusAria: '本地服务状态',
     nodeStatus: '节点状态',
     pairAndroid: '配对 Android',
-    qrLabel: '配对二维码占位区',
-    qrText: '配对',
+    qrLabel: '配对二维码',
+    qrAlt: 'ClipBridge 配对二维码',
     lanAddress: '局域网地址',
     pairingCode: '配对码',
     expires: '有效期至',
@@ -68,6 +70,7 @@ const copy: Record<Language, Copy> = {
     inboundFrom: '来自',
     outboundTo: '发送到',
     languageToggle: 'EN',
+    scanHint: '使用 Android 端扫描，或手动输入下方地址。',
   },
   en: {
     booting: 'Booting LAN node...',
@@ -77,8 +80,8 @@ const copy: Record<Language, Copy> = {
     statusAria: 'Local service status',
     nodeStatus: 'Node status',
     pairAndroid: 'Pair Android',
-    qrLabel: 'Pairing QR placeholder',
-    qrText: 'PAIR',
+    qrLabel: 'Pairing QR code',
+    qrAlt: 'ClipBridge pairing QR code',
     lanAddress: 'LAN address',
     pairingCode: 'Pairing code',
     expires: 'Expires',
@@ -99,6 +102,7 @@ const copy: Record<Language, Copy> = {
     inboundFrom: 'Inbound from',
     outboundTo: 'Outbound to',
     languageToggle: '中',
+    scanHint: 'Scan with the Android app, or enter this address manually.',
   },
 };
 
@@ -110,6 +114,18 @@ function formatTime(timestamp: number) {
   }).format(new Date(timestamp));
 }
 
+function createPairingPayload(pairingInfo: PairingInfo) {
+  return JSON.stringify({
+    app: pairingInfo.app,
+    version: pairingInfo.version,
+    host: pairingInfo.host,
+    port: pairingInfo.port,
+    pairingCode: pairingInfo.pairingCode,
+    deviceName: pairingInfo.deviceName,
+    expiresAt: pairingInfo.expiresAt,
+  });
+}
+
 export default function App() {
   const [language, setLanguage] = useState<Language>(() => {
     const saved = window.localStorage.getItem('clipbridge-language');
@@ -117,8 +133,11 @@ export default function App() {
   });
   const t = copy[language];
   const [pairingInfo, setPairingInfo] = useState<PairingInfo | null>(null);
+  const [qrCode, setQrCode] = useState('');
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [status, setStatus] = useState(t.booting);
+
+  const pairingPayload = useMemo(() => (pairingInfo ? createPairingPayload(pairingInfo) : ''), [pairingInfo]);
 
   async function refreshHistory() {
     const items = await invoke<HistoryItem[]>('get_history');
@@ -140,6 +159,23 @@ export default function App() {
       setStatus(t.booting);
     }
   }, [language, pairingInfo, t]);
+
+  useEffect(() => {
+    if (!pairingPayload) {
+      setQrCode('');
+      return;
+    }
+
+    QRCode.toDataURL(pairingPayload, {
+      errorCorrectionLevel: 'M',
+      margin: 2,
+      scale: 7,
+      color: {
+        dark: '#10130f',
+        light: '#e7e0cf',
+      },
+    }).then(setQrCode).catch((error) => setStatus(String(error)));
+  }, [pairingPayload]);
 
   useEffect(() => {
     async function boot() {
@@ -184,15 +220,15 @@ export default function App() {
             <h2>{t.pairAndroid}</h2>
           </div>
           <div className="qr-frame">
-            <div className="qr-placeholder" aria-label={t.qrLabel}>
-              <span />
-              <span />
-              <span />
-              <b>{t.qrText}</b>
-            </div>
+            {qrCode ? (
+              <img className="qr-code" src={qrCode} alt={t.qrAlt} />
+            ) : (
+              <div className="qr-loading">QR</div>
+            )}
           </div>
           {pairingInfo ? (
             <div className="pairing-details">
+              <p className="scan-hint">{t.scanHint}</p>
               <p><span>{t.lanAddress}</span><code>{pairingInfo.host}:{pairingInfo.port}</code></p>
               <p><span>{t.pairingCode}</span><code>{pairingInfo.pairingCode}</code></p>
               <p><span>{t.expires}</span><code>{formatTime(pairingInfo.expiresAt)}</code></p>
