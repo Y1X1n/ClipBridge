@@ -1,13 +1,14 @@
 package com.clipbridge.app
 
 object AppText {
-    const val SUBTITLE = "本地 Windows ↔ Android 剪贴板同步 / Local Windows ↔ Android clipboard sync"
+    const val SUBTITLE = "局域网直连 · 无云端 · 无账号 / LAN direct · No cloud · No account"
     const val NOT_CONNECTED = "未连接 / Not connected"
     const val HOST_HINT = "Windows IP，例如 / e.g. 192.168.1.20"
     const val PORT_HINT = "端口 / Port"
     const val CONNECT = "连接 Windows / Connect to Windows"
+    const val SCAN_QR = "扫描 Windows 二维码 / Scan Windows QR"
     const val SEND_CLIPBOARD = "发送当前剪贴板到 Windows / Send current clipboard to Windows"
-    const val RECENT_HISTORY = "最近记录 / Recent history"
+    const val RECENT_HISTORY = "传输记录 / Transfer log"
     const val COPY = "复制 / Copy"
     const val ANDROID_SHARE = "Android 分享 / Android share"
     const val ANDROID_DEVICE = "Android 手机 / Android"
@@ -16,4 +17,10 @@ object AppText {
     const val CONNECTED_TO = "已连接 / Connected to"
     const val DISCONNECTED = "已断开 / Disconnected"
     const val CONNECTION_FAILED = "连接失败 / Connection failed"
+    const val PAIRING_READY = "二维码已读取 / QR payload loaded"
+    const val INVALID_QR = "不是有效的 ClipBridge 二维码 / Invalid ClipBridge QR"
+    const val SCAN_CANCELLED = "已取消扫码 / Scan cancelled"
+    const val NODE_STATUS = "节点状态 / Node status"
+    const val LINK_PANEL = "链路配置 / Link setup"
+    const val MANUAL_HINT = "扫码会自动填入地址，也可以手动输入。 / Scan to fill the address, or enter it manually."
 }

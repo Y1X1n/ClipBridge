@@ -1,7 +1,16 @@
 <resources>
-    <style name="AppTheme" parent="android:style/Theme.Material.Light.NoActionBar">
+    <style name="AppTheme" parent="android:style/Theme.Material.NoActionBar">
         <item name="android:fontFamily">sans</item>
-        <item name="android:windowLightStatusBar">true</item>
-        <item name="android:colorAccent">#2563EB</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:statusBarColor">#10130F</item>
+        <item name="android:navigationBarColor">#10130F</item>
+        <item name="android:colorAccent">#D7FF47</item>
+    </style>
+
+    <style name="zxing_CaptureTheme" parent="android:style/Theme.Material.NoActionBar">
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:statusBarColor">#10130F</item>
+        <item name="android:navigationBarColor">#10130F</item>
+        <item name="android:colorAccent">#D7FF47</item>
     </style>
 </resources>

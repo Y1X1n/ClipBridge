@@ -10,6 +10,7 @@ dist/
 build/
 out/
 target/
+artifacts/
 
 # Tauri
 apps/windows/src-tauri/target/
