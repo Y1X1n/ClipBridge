@@ -10,6 +10,7 @@ data class HistoryItem(
 object HistoryStore {
     private val items = mutableListOf<HistoryItem>()
 
+    @Synchronized
     fun add(item: HistoryItem) {
         items.add(0, item)
         if (items.size > 100) {
@@ -17,5 +18,6 @@ object HistoryStore {
         }
     }
 
+    @Synchronized
     fun list(): List<HistoryItem> = items.toList()
 }

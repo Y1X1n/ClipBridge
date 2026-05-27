@@ -5,19 +5,32 @@ import okhttp3.Request
 import okhttp3.Response
 import okhttp3.WebSocket
 import okhttp3.WebSocketListener
+import java.util.concurrent.TimeUnit
 
 class WebSocketClient(
     private val deviceId: String,
-    private val onStatus: (String) -> Unit,
-    private val onMessage: (String) -> Unit,
+    private val listener: Listener,
 ) {
-    private val client = OkHttpClient()
+    interface Listener {
+        fun onStatusChanged(status: String)
+        fun onMessageReceived(payload: String)
+    }
+
+    private val client = OkHttpClient.Builder()
+        .pingInterval(15, TimeUnit.SECONDS)
+        .connectTimeout(10, TimeUnit.SECONDS)
+        .readTimeout(30, TimeUnit.SECONDS)
+        .writeTimeout(30, TimeUnit.SECONDS)
+        .build()
+
     private var socket: WebSocket? = null
     private var lastReceivedContent: String? = null
+    @Volatile var isConnected = false; private set
 
     fun connect(host: String, port: Int) {
-        onStatus("${AppText.VALIDATING_LINK} $host:$port")
+        listener.onStatusChanged("${AppText.VALIDATING_LINK} $host:$port")
         socket?.close(1000, "Reconnect")
+        isConnected = false
 
         val request = Request.Builder()
             .url("ws://$host:$port")
@@ -25,25 +38,34 @@ class WebSocketClient(
 
         socket = client.newWebSocket(request, object : WebSocketListener() {
             override fun onOpen(webSocket: WebSocket, response: Response) {
-                onStatus("${AppText.CONNECTED_TO} $host:$port")
+                isConnected = true
+                listener.onStatusChanged("${AppText.CONNECTED_TO} $host:$port")
                 webSocket.send(Protocol.hello(deviceId))
             }
 
             override fun onMessage(webSocket: WebSocket, text: String) {
                 if (text.contains("\"type\":\"pairing.confirm\"")) {
-                    onStatus("${AppText.LINK_VALIDATED} $host:$port")
+                    listener.onStatusChanged("${AppText.LINK_VALIDATED} $host:$port")
                 }
-                onMessage(text)
+                listener.onMessageReceived(text)
             }
 
             override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
-                onStatus(AppText.DISCONNECTED)
+                isConnected = false
+                listener.onStatusChanged(AppText.DISCONNECTED)
             }
 
             override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
-                onStatus(t.message ?: AppText.CONNECTION_FAILED)
+                isConnected = false
+                listener.onStatusChanged(t.message ?: AppText.CONNECTION_FAILED)
             }
         })
+    }
+
+    fun disconnect() {
+        socket?.close(1000, "User disconnect")
+        socket = null
+        isConnected = false
     }
 
     fun sendClipboard(content: String) {

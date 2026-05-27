@@ -25,4 +25,8 @@ object AppText {
     const val MANUAL_HINT = "扫码会自动填入地址，也可以手动输入。 / Scan to fill the address, or enter it manually."
     const val VALIDATING_LINK = "正在校验信息通路 / Validating link"
     const val LINK_VALIDATED = "信息通路校验成功 / Link validated"
+    const val NOTIFICATION_CHANNEL = "ClipBridge 后台服务 / Background service"
+    const val NOTIFICATION_TITLE = "ClipBridge 运行中 / ClipBridge running"
+    const val NOTIFICATION_TEXT = "剪贴板同步已启用 / Clipboard sync active"
+    const val DISCONNECT_ACTION = "断开连接 / Disconnect"
 }

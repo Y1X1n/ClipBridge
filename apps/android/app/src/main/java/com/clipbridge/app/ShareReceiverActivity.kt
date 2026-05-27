@@ -14,8 +14,16 @@ class ShareReceiverActivity : Activity() {
             ""
         }
 
+        if (sharedText.isNotBlank()) {
+            HistoryStore.add(HistoryItem("sent", AppText.ANDROID_SHARE, sharedText))
+            startService(
+                Intent(this, ClipBridgeService::class.java)
+                    .setAction(ClipBridgeService.ACTION_SEND)
+                    .putExtra(ClipBridgeService.EXTRA_CONTENT, sharedText)
+            )
+        }
+
         val launch = Intent(this, MainActivity::class.java)
-            .putExtra("sharedText", sharedText)
             .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
         startActivity(launch)
         finish()

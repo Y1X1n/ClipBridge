@@ -1,6 +1,7 @@
 package com.clipbridge.app
 
 import android.app.Activity
+import android.content.Intent
 import android.os.Bundle
 import android.provider.Settings
 import android.view.Gravity
@@ -17,18 +18,24 @@ import org.json.JSONObject
 class MainActivity : Activity() {
     private lateinit var clipboard: ClipboardRepository
     private lateinit var pairing: PairingRepository
-    private lateinit var client: WebSocketClient
     private lateinit var status: TextView
     private lateinit var historyList: LinearLayout
     private lateinit var hostInput: EditText
     private lateinit var portInput: EditText
+    private val statusPoller = android.os.Handler(android.os.Looper.getMainLooper())
+    private val statusRunnable = object : Runnable {
+        override fun run() {
+            refreshStatus()
+            renderHistory()
+            statusPoller.postDelayed(this, 1500)
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         clipboard = ClipboardRepository(this)
         pairing = PairingRepository(this)
-        client = WebSocketClient(deviceId(), ::setStatus, ::handleMessage)
 
         setContentView(createContentView())
         pairing.endpoint()?.let { (host, port) ->
@@ -37,22 +44,30 @@ class MainActivity : Activity() {
         }
 
         intent.getStringExtra("sharedText")?.takeIf { it.isNotBlank() }?.let { sharedText ->
-            HistoryStore.add(HistoryItem("sent", AppText.ANDROID_SHARE, sharedText))
-            client.sendClipboard(sharedText)
-            renderHistory()
+            sendToService(sharedText)
         }
     }
 
-    override fun onNewIntent(intent: android.content.Intent) {
+    override fun onResume() {
+        super.onResume()
+        refreshStatus()
+        renderHistory()
+        statusPoller.post(statusRunnable)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        statusPoller.removeCallbacks(statusRunnable)
+    }
+
+    override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         intent.getStringExtra("sharedText")?.takeIf { it.isNotBlank() }?.let { sharedText ->
-            HistoryStore.add(HistoryItem("sent", AppText.ANDROID_SHARE, sharedText))
-            client.sendClipboard(sharedText)
-            renderHistory()
+            sendToService(sharedText)
         }
     }
 
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: android.content.Intent?) {
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         val result = IntentIntegrator.parseActivityResult(requestCode, resultCode, data)
         if (result != null) {
             if (result.contents == null) {
@@ -63,6 +78,16 @@ class MainActivity : Activity() {
             return
         }
         super.onActivityResult(requestCode, resultCode, data)
+    }
+
+    private fun sendToService(content: String) {
+        HistoryStore.add(HistoryItem("sent", AppText.ANDROID_SHARE, content))
+        startService(
+            Intent(this, ClipBridgeService::class.java)
+                .setAction(ClipBridgeService.ACTION_SEND)
+                .putExtra(ClipBridgeService.EXTRA_CONTENT, content)
+        )
+        renderHistory()
     }
 
     private fun createContentView(): ScrollView {
@@ -157,8 +182,7 @@ class MainActivity : Activity() {
             hostInput.setText(host)
             portInput.setText(port.toString())
             pairing.saveEndpoint(host, port)
-            setStatus(AppText.VALIDATING_LINK)
-            client.connect(host, port)
+            connectToService(host, port)
         } catch (_: Exception) {
             setStatus(AppText.INVALID_QR)
         }
@@ -169,34 +193,32 @@ class MainActivity : Activity() {
         val port = portInput.text.toString().toIntOrNull() ?: 7890
         if (host.isNotBlank()) {
             pairing.saveEndpoint(host, port)
-            client.connect(host, port)
+            connectToService(host, port)
         }
+    }
+
+    private fun connectToService(host: String, port: Int) {
+        startService(
+            Intent(this, ClipBridgeService::class.java)
+                .setAction(ClipBridgeService.ACTION_CONNECT)
+                .putExtra(ClipBridgeService.EXTRA_HOST, host)
+                .putExtra(ClipBridgeService.EXTRA_PORT, port)
+        )
     }
 
     private fun sendCurrentClipboard() {
         val content = clipboard.readText()
-        if (content.isNotBlank() && !client.shouldSkipSend(content)) {
-            HistoryStore.add(HistoryItem("sent", AppText.ANDROID_DEVICE, content))
-            client.sendClipboard(content)
-            renderHistory()
+        if (content.isNotBlank()) {
+            startService(
+                Intent(this, ClipBridgeService::class.java)
+                    .setAction(ClipBridgeService.ACTION_SEND)
+                    .putExtra(ClipBridgeService.EXTRA_CONTENT, content)
+            )
         }
     }
 
-    private fun handleMessage(payload: String) {
-        runOnUiThread {
-            val json = JSONObject(payload)
-            if (json.optString("type") == "clipboard.update") {
-                val content = json.optString("content")
-                if (content.isNotBlank()) {
-                    client.markReceived(content)
-                    clipboard.writeText(content)
-                    HistoryStore.add(HistoryItem("received", json.optString("fromDeviceId", "Windows"), content))
-                    renderHistory()
-                }
-            } else {
-                setStatus("${AppText.RECEIVED} ${json.optString("type")}")
-            }
-        }
+    private fun refreshStatus() {
+        setStatus(ClipBridgeService.statusText)
     }
 
     private fun renderHistory() {
@@ -283,11 +305,7 @@ class MainActivity : Activity() {
     }
 
     private fun setStatus(value: String) {
-        runOnUiThread { status.text = value }
-    }
-
-    private fun deviceId(): String {
-        return "android-${Settings.Secure.getString(contentResolver, Settings.Secure.ANDROID_ID)}"
+        status.text = value
     }
 
     private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
