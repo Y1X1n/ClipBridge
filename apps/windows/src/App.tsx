@@ -22,7 +22,6 @@ type Copy = {
   preparing: string;
   relayRules: string;
   clipboardWatch: string;
-  nextSlice: string;
   androidInbound: string;
   open: string;
   writeInbound: string;
@@ -56,7 +55,6 @@ const copy: Record<Language, Copy> = {
     preparing: '正在准备配对信息...',
     relayRules: '同步规则',
     clipboardWatch: '监听 Windows 剪贴板',
-    nextSlice: '下一阶段',
     androidInbound: 'Android 接收通道',
     open: '开启',
     writeInbound: '收到内容写入剪贴板',
@@ -88,7 +86,6 @@ const copy: Record<Language, Copy> = {
     preparing: 'Preparing pairing payload...',
     relayRules: 'Relay rules',
     clipboardWatch: 'Windows clipboard watch',
-    nextSlice: 'Next slice',
     androidInbound: 'Android inbound lane',
     open: 'Open',
     writeInbound: 'Write inbound text',
@@ -243,7 +240,7 @@ export default function App() {
             <span>02</span>
             <h2>{t.relayRules}</h2>
           </div>
-          <div className="toggle-row"><span>{t.clipboardWatch}</span><strong>{t.nextSlice}</strong></div>
+          <div className="toggle-row"><span>{t.clipboardWatch}</span><strong>{t.armed}</strong></div>
           <div className="toggle-row"><span>{t.androidInbound}</span><strong>{t.open}</strong></div>
           <div className="toggle-row"><span>{t.writeInbound}</span><strong>{t.armed}</strong></div>
           <div className="route-map" aria-hidden="true">

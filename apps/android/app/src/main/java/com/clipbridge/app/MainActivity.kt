@@ -175,7 +175,7 @@ class MainActivity : Activity() {
 
     private fun sendCurrentClipboard() {
         val content = clipboard.readText()
-        if (content.isNotBlank()) {
+        if (content.isNotBlank() && !client.shouldSkipSend(content)) {
             HistoryStore.add(HistoryItem("sent", AppText.ANDROID_DEVICE, content))
             client.sendClipboard(content)
             renderHistory()
@@ -188,6 +188,8 @@ class MainActivity : Activity() {
             if (json.optString("type") == "clipboard.update") {
                 val content = json.optString("content")
                 if (content.isNotBlank()) {
+                    client.markReceived(content)
+                    clipboard.writeText(content)
                     HistoryStore.add(HistoryItem("received", json.optString("fromDeviceId", "Windows"), content))
                     renderHistory()
                 }

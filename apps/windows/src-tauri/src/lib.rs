@@ -25,6 +25,7 @@ struct AppState {
 pub fn run() {
     let pairing_info = pairing::create_pairing_info();
     let history = HistoryStore::default();
+    let registry = websocket::create_registry();
 
     tauri::Builder::default()
         .plugin(tauri_plugin_clipboard_manager::init())
@@ -33,7 +34,13 @@ pub fn run() {
             history: history.clone(),
         })
         .setup(move |app| {
-            websocket::start_server(app.handle().clone(), history.clone(), pairing_info.port);
+            websocket::start_server(
+                app.handle().clone(),
+                history.clone(),
+                registry.clone(),
+                pairing_info.port,
+            );
+            clipboard::start_monitor(app.handle().clone(), registry.clone(), history.clone());
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![get_pairing_info, get_history])

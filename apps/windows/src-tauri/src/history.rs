@@ -34,6 +34,22 @@ impl HistoryStore {
         items.truncate(100);
     }
 
+    pub fn add_sent(&self, target_device: String, content: String) {
+        let mut items = self.items.lock().expect("history lock poisoned");
+        items.insert(
+            0,
+            HistoryItem {
+                id: uuid::Uuid::new_v4().to_string(),
+                direction: "sent".to_string(),
+                source_device: target_device,
+                content_type: "text".to_string(),
+                content,
+                timestamp: chrono::Utc::now().timestamp_millis(),
+            },
+        );
+        items.truncate(100);
+    }
+
     pub fn list(&self) -> Vec<HistoryItem> {
         self.items.lock().expect("history lock poisoned").clone()
     }

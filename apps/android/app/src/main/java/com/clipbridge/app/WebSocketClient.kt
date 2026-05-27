@@ -13,6 +13,7 @@ class WebSocketClient(
 ) {
     private val client = OkHttpClient()
     private var socket: WebSocket? = null
+    private var lastReceivedContent: String? = null
 
     fun connect(host: String, port: Int) {
         onStatus("${AppText.VALIDATING_LINK} $host:$port")
@@ -46,6 +47,22 @@ class WebSocketClient(
     }
 
     fun sendClipboard(content: String) {
+        if (content == lastReceivedContent) {
+            lastReceivedContent = null
+            return
+        }
         socket?.send(Protocol.clipboardUpdate(deviceId, content))
+    }
+
+    fun shouldSkipSend(content: String): Boolean {
+        if (content == lastReceivedContent) {
+            lastReceivedContent = null
+            return true
+        }
+        return false
+    }
+
+    fun markReceived(content: String) {
+        lastReceivedContent = content
     }
 }
