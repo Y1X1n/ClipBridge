@@ -15,4 +15,12 @@ class ClipboardRepository(private val context: Context) {
     fun writeText(content: String) {
         manager.setPrimaryClip(ClipData.newPlainText("ClipBridge", content))
     }
+
+    fun addListener(listener: ClipboardManager.OnPrimaryClipChangedListener) {
+        manager.addPrimaryClipChangedListener(listener)
+    }
+
+    fun removeListener(listener: ClipboardManager.OnPrimaryClipChangedListener) {
+        manager.removePrimaryClipChangedListener(listener)
+    }
 }

@@ -4,6 +4,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
+import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.os.IBinder
@@ -17,19 +18,25 @@ class ClipBridgeService : Service(), WebSocketClient.Listener {
     private var reconnectHost: String? = null
     private var reconnectPort: Int = 7890
     private var reconnectDelay: Long = 1000
+    @Volatile private var isWritingFromRemote = false
+
+    private val clipboardListener = ClipboardManager.OnPrimaryClipChangedListener {
+        if (!isWritingFromRemote) {
+            val content = clipboard.readText()
+            if (content.isNotBlank() && !client.shouldSkipSend(content)) {
+                HistoryStore.add(HistoryItem("sent", AppText.ANDROID_DEVICE, content))
+                client.sendClipboard(content)
+            }
+        }
+    }
 
     override fun onCreate() {
         super.onCreate()
         clipboard = ClipboardRepository(this)
         client = WebSocketClient(deviceId(), this)
+        clipboard.addListener(clipboardListener)
         createNotificationChannel()
         instance = this
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        client.disconnect()
-        instance = null
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -60,6 +67,13 @@ class ClipBridgeService : Service(), WebSocketClient.Listener {
         return START_STICKY
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        clipboard.removeListener(clipboardListener)
+        client.disconnect()
+        instance = null
+    }
+
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStatusChanged(status: String) {
@@ -79,7 +93,9 @@ class ClipBridgeService : Service(), WebSocketClient.Listener {
             val content = json.optString("content")
             if (content.isNotBlank()) {
                 client.markReceived(content)
+                isWritingFromRemote = true
                 clipboard.writeText(content)
+                isWritingFromRemote = false
                 HistoryStore.add(HistoryItem("received", json.optString("fromDeviceId", "Windows"), content))
             }
         }
